@@ -1,49 +1,75 @@
 RIME_ROOT = $(CURDIR)
-THIRDPARTY_PATHS = -DCMAKE_INCLUDE_PATH="$(RIME_ROOT)/thirdparty/include" -DCMAKE_LIBRARY_PATH="$(RIME_ROOT)/thirdparty/lib"
 
 sharedir = $(DESTDIR)/usr/share
 bindir = $(DESTDIR)/usr/bin
 
-.PHONY: all install uninstall thirdparty clean librime-static librime debug
+.PHONY: all thirdparty xcode clean\
+librime librime-static install-librime uninstall-librime \
+release debug test install uninstall install-debug uninstall-debug
 
-all: librime
-	@echo ':)'
-
-install: install-librime
-	@echo ':)'
-
-uninstall: uninstall-librime
-	@echo ':)'
+all: release
 
 thirdparty:
-	make -f Makefile.thirdparty
+	make -f thirdparty.mk
+
+thirdparty/%:
+	make -f thirdparty.mk $(@:thirdparty/%=%)
+
+xcode:
+	make -f xcode.mk
+
+xcode/%:
+	make -f xcode.mk $(@:xcode/%=%)
 
 clean:
-	rm -Rf build build-static debug-build
+	rm -Rf build build-static debug
+
+librime: release
+install-librime: install
+uninstall-librime: uninstall
 
 librime-static:
-	mkdir -p build-static
-	(cd build-static; cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_STATIC=ON -DBUILD_SHARED_LIBS=OFF $(THIRDPARTY_PATHS) ..)
-	make -C build-static
+	cmake . -Bbuild-static \
+	-DCMAKE_INSTALL_PREFIX=/usr \
+	-DCMAKE_BUILD_TYPE=Release \
+	-DBUILD_STATIC=ON \
+	-DBUILD_SHARED_LIBS=OFF
+	cmake --build build-static
 
-librime:
-	mkdir -p build
-	(cd build; cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release ..)
-	make -C build
+release:
+	cmake . -Bbuild \
+	-DCMAKE_INSTALL_PREFIX=/usr \
+	-DCMAKE_BUILD_TYPE=Release \
+	-DBUILD_MERGED_PLUGINS=OFF
+	cmake --build build
 
-install-librime:
-	make -C build install
-
-uninstall-librime:
-	make -C build uninstall
+merged-plugins:
+	cmake . -Bbuild \
+	-DCMAKE_INSTALL_PREFIX=/usr \
+	-DCMAKE_BUILD_TYPE=Release \
+	-DBUILD_MERGED_PLUGINS=ON
+	cmake --build build
 
 debug:
-	mkdir -p debug-build
-	(cd debug-build; cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug -DBUILD_TEST=ON ..)
-	make -C debug-build
+	cmake . -Bdebug \
+	-DCMAKE_INSTALL_PREFIX=/usr \
+	-DCMAKE_BUILD_TYPE=Debug
+	cmake --build debug
+
+install:
+	cmake --build build --target install
 
 install-debug:
-	make -C debug-build install
+	cmake --build debug --target install
+
+uninstall:
+	cmake --build build --target uninstall
 
 uninstall-debug:
-	make -C debug-build uninstall
+	cmake --build debug --target uninstall
+
+test: release
+	(cd build/test; ./rime_test)
+
+test-debug: debug
+	(cd debug/test; ./rime_test)

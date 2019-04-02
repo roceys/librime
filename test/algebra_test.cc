@@ -1,9 +1,10 @@
 //
-// Copyleft RIME Developers
-// License: GPLv3
+// Copyright RIME Developers
+// Distributed under the BSD License
 //
 // 2012-01-19 GONG Chen <chen.sst@gmail.com>
 //
+#include <cmath>
 #include <gtest/gtest.h>
 #include <rime/common.h>
 #include <rime/algo/algebra.h>
@@ -28,7 +29,7 @@ TEST(RimeAlgebraTest, SpellingManipulation) {
   rime::Projection p;
   ASSERT_TRUE(p.Load(c));
 
-  std::string str("Shang");
+  rime::string str("Shang");
   EXPECT_TRUE(p.Apply(&str));
   EXPECT_EQ("sang", str);
 }
@@ -75,5 +76,5 @@ TEST(RimeAlgebraTest, Projection) {
   EXPECT_EQ(1, s["zh"].size());
   ASSERT_EQ(2, s["sh"].size());
   EXPECT_EQ(rime::kAbbreviation, s["sh"][0].properties.type);
-  EXPECT_GT(0.5001, s["sh"][0].properties.credibility);
+  EXPECT_DOUBLE_EQ(log(0.5), s["sh"][0].properties.credibility);
 }
